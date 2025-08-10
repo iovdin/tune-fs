@@ -1,0 +1,8 @@
+{
+  "description": "returns buffer, used for testing tools",
+  "parameters": {
+    "type": "object",
+    "properties": { },
+    "required": []
+  }
+}

@@ -1,0 +1,17 @@
+{ 
+  "description": "add 2 numbers, a + b",
+  "parameters": { 
+    "type": "object",
+    "properties": { 
+      "a": { 
+        "type": "number",
+        "description": "first argument" 
+      },
+      "b": {
+        "type": "number",
+        "description": "second argument" 
+      } 
+    },
+    "required": [ "a", "b" ] 
+  } 
+}

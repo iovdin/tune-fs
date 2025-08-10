@@ -1,0 +1,8 @@
+{
+  "description": "returns null, used for testing tools",
+  "parameters": {
+    "type": "object",
+    "properties": { },
+    "required": []
+  }
+}

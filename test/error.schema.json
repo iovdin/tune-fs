@@ -1,0 +1,8 @@
+{
+  "description": "throws an error, used for testing tools",
+  "parameters": {
+    "type": "object",
+    "properties": { },
+    "required": []
+  }
+}

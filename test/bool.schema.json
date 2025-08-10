@@ -1,0 +1,8 @@
+{
+  "description": "A simple function that returns true",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  }
+}

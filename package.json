@@ -1,0 +1,31 @@
+{
+  "name": "tune-fs",
+  "version": "0.1.0",
+  "description": "Filesystem middlewares for tune",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node test/index.js",
+    "test:watch": "node --watch test/index.js"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "filesystem",
+    "tools",
+    "tune"
+  ],
+  "author": "Ilya Ovdin <iovdin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iovdin/tune-fs"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "tune-sdk": "latest"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.1",
+    "memfs": "^4.36.0",
+    "tune-sdk": "latest"
+  }
+}

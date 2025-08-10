@@ -1,0 +1,8 @@
+{
+  "description": "returns undefined, used for testing tools",
+  "parameters": {
+    "type": "object",
+    "properties": { },
+    "required": []
+  }
+}
