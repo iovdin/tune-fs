@@ -1,0 +1,33 @@
+# Test directory
+test/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Development files
+.env
+.cache
+chats/
+rpc.log
+py.log
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# NPM files
+node_modules/
+package-lock.json
+
+# Backup files
+*.backup

@@ -617,9 +617,39 @@ tests.pparse1 = async function() {
   })
 }
 
-// test.writer = async () => {
-//
-// }
+tests.writer = async () => {
+
+  const testDir = `test/write-test` 
+  if (fs.existsSync(testDir)) {
+    fs.rmSync(testDir, { recursive: true} )
+  }
+  fs.mkdirSync(testDir, { recursive: true });
+
+  console.log("writer - simple write")
+
+  let ctx = tune.makeContext(writer()) 
+  let filename = path.resolve(testDir, "name1.txt")
+  await ctx.write(filename, "content")
+  assert.ok(fs.existsSync(filename), `${filename} should exist`)
+  assert.equal(fs.readFileSync(filename, "utf8").trim(), "content")
+
+  console.log("writer - restrict")
+  let dirname = path.resolve(testDir, "restrict") 
+  ctx = tune.makeContext(writer({paths: dirname })) 
+  filename = path.resolve(testDir, "name1.txt")
+  await assert.rejects(
+    async() => ctx.write(filename, "content"),
+    { message: /write not allowed/ })
+  filename = path.resolve(dirname, "name1.txt")
+  await ctx.write(filename, "content")
+  assert.ok(fs.existsSync(filename), `${filename} should exist`)
+  assert.equal(fs.readFileSync(filename, "utf8").trim(), "content")
+
+  if (fs.existsSync(testDir)) {
+    fs.rmSync(testDir, { recursive: true} )
+  }
+
+}
 
 async function run(testList=[]){
   testList = testList.length ? testList : Object.keys(tests)

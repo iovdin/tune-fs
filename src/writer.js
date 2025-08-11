@@ -17,7 +17,7 @@ function isInside(base, target) {
 function createWriterMiddleware(opts = {}) {
   const allowed = toArray(opts.paths).map(canon).filter(Boolean);
 
-  return async function writeFile(filename, data) {
+  return async function write(filename, data) {
     const abs = path.resolve(filename);
 
     // Resolve symlinks for existing parts to guard against writes escaping allowed roots

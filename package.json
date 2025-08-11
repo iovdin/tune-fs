@@ -1,8 +1,13 @@
 {
   "name": "tune-fs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Filesystem middlewares for tune",
   "main": "src/index.js",
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node test/index.js",
     "test:watch": "node --watch test/index.js"

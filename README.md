@@ -1,33 +1,30 @@
 # Tune FS
 
-Filesystem middlewares for [Tune](https://github.com/iovdin/tune) - access files and executable tools directly in your chat context.
+filesystem middlewares for [Tune](https://github.com/iovdin/tune) - access files and load tools/models from filesystem.
 
-This middleware collection allows you to interact with your filesystem, execute tools, and access files from within your Tune chat sessions.
+This middleware collection allows you to interact with your filesystem, load tools/models/processors from filesystem, and access files from within your Tune chat sessions.
 
 ## Available Middlewares
 
-- **Main (`fs`)**: Combined filesystem access (tools + files + environment variables)
-- **Tools**: Execute `.tool.js`, `.llm.js`, `.proc.js`, `.ctx.js` files
-- **Files**: Access text files, images, and directories
-- **Current**: Access current file context (`__filename`, `__dirname`, etc.)
-- **Writer**: Write files to the filesystem
+- `tunefs`: Combined filesystem access (tools + files + .env files)
+- `tools`: load tools/models/processors from filesystem using  `.tool.js`, `.llm.js`, `.proc.js`, `.ctx.js` file formats
+- `files`: read text files, images, and directories
+- `writer`: write files to the filesystem
 
 ## Usage Examples
 
 ```chat
- system: Access your project files and tools
+system: 
+@gpt-5-mini.llm.js
+@readfile.tool.js
 
- user: 
-Show me @README.md
+user:
+can you read README.md?
 
- assistant:
-*reads and displays README.md content*
+tool_call: readfile {"filename": "README.md"}
+tool_result:
+@README.md
 
- user:
-Run @converter.tool.js with input "hello world"
-
- assistant: 
-*executes the converter tool and shows results*
 ```
 
 ## Setup for Text Editor
@@ -42,15 +39,18 @@ npm install tune-fs
 Add to `~/.tune/default.ctx.js`:
 
 ```javascript
-const fs = require('tune-fs')
+const path = require('path')
+const tunefs = require('tune-fs')
+const { writer } = tunefs
 
 module.exports = [
-    fs({
-        paths: ['./tools', './docs'],
-        mount: 'fs',
-        makeSchema: true,
-        expose: ['converter.tool.js', 'readme.md', 'config.json']
+    ...
+    tunefs({
+        paths: process.env.TUNE_PATH.split(path.delimiter),
+        makeSchema: true
     })
+    ...
+    writer()
 ]
 ```
 
@@ -62,22 +62,16 @@ npm install tune-fs tune-sdk
 
 ```javascript
 const tune = require('tune-sdk')
-const fs = require('tune-fs')
-const { tools, files, current, writer } = require('tune-fs')
+const { tools, files, writer } = require('tune-fs')
 
 const ctx = tune.makeContext(
-    {},
-    fs({ 
-        paths: './workspace',
-        makeSchema: true 
-    }),
-    current(),
-    writer()
+    tools({ path: './tools' }), // load global tools
+    files({ path: `./${userId}`}), // read user files
+    writer({ path: `./${userId}`}), // allow user's chat to write to directory
 )
-
 const result = await ctx.text2run(`
- system: You can access files with @filename
- user: show me @package.json
+ system: @readfile @gpt-5-mini 
+ user: show me package.json
 `)
 ```
 
@@ -85,7 +79,7 @@ const result = await ctx.text2run(`
 
 ### Main Filesystem Middleware
 ```javascript
-fs({
+tunefs({
   // Filesystem paths to search (array or string)
   paths: ['./tools', './docs'], // or single string: './workspace'
   
@@ -107,7 +101,7 @@ tools({
   path: './tools',
   mount: 'tools',
   makeSchema: true,
-  expose: ['converter.tool.js', 'processor.proc.js']
+  expose: ['readfile.tool.js', 'gpt-5-mini.llm.js']
 })
 
 // Files only - text files and images  
@@ -117,29 +111,155 @@ files({
   expose: ['readme.md', 'config.json']
 })
 
-// Current file context
-current() // Provides __filename, __dirname, __basename, __name, __ext
-
 // File writer
 writer() // For writing files
 ```
 
 ## File Types Supported
 
-### Executable Tools
-- `.tool.js/.tool.mjs/.tool.py/.tool.php/.tool.chat` - Tools with JSON schema
-- `.llm.js/.llm.mjs/.llm.py/.llm.php` - LLM processors  
-- `.proc.js/.proc.mjs/.proc.py/.proc.php` - General processors
-- `.ctx.js/.ctx.mjs/.ctx.py/.ctx.php` - Context modifiers
+### Tools
+`.tool.js/.tool.mjs/.tool.py/.tool.php/.tool.chat` - Tools with JSON schema.
+Works with `tools` middleware.
 
-### Files
+Example tool file (`readfile.tool.js`):
+```javascript
+module.exports = function({ filename }, ctx) {
+  return `@${filename}`;
+}
+```
+
+Example schema file (`readfile.schema.json`):
+```json
+{
+  "description": "Read the contents of a specified file",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "filename": {
+        "type": "string",
+        "description": "The name of the file to read"
+      }
+    },
+    "required": ["filename"]
+  }
+}
+```
+
+### Models
+`.llm.js/.llm.mjs/.llm.py/.llm.php` - LLM models.
+Works with `tools` middleware.
+
+Example llm file (`gpt-5-mini.llm.js`):
+```javascript
+module.exports = async function(payload, ctx) {
+  const key = await ctx.read('OPENAI_KEY');
+  const result =  ({
+    url: "https://api.openai.com/v1/chat/completions",
+    method: "POST",
+    headers: { 
+      "content-type": "application/json",
+      authorization: `Bearer ${key}` 
+    },
+    body: JSON.stringify({
+      ...payload,
+      model: "gpt-5-mini",
+      reasoning_effort: "low",
+      messages: payload.messages.filter(msg => msg.role !== 'comment'),
+    })
+  })
+  return result
+}
+```
+
+### Processors
+- `.proc.js/.proc.mjs/.proc.py/.proc.php` - processors (used with | syntax).
+Works with `tools` middleware.
+
+```chat
+system: @{ gpt-5-mini | json_format }
+You always respond with JSON:
+{
+   "message": "Your message"
+}
+user: 
+Hi
+assistant:
+{
+    "message": "Hello how can I help you?"
+}
+```
+
+Example processor file (`json_format.proc.mjs`):
+```
+export default async function json_format(node, args, ctx) {
+  if (!node) {
+    return 
+  }
+  const response_format = { "type": "json_object" }
+  return {
+    ...node,
+    exec: async (payload, ctx) => node.exec({ ...payload, response_format }, ctx)
+  }
+}
+```
+
+### Context 
+- `.ctx.js/.ctx.mjs/.ctx.py/.ctx.php` - Context modifiers.
+Works with `tools` middleware.
+
+Example ctx file (`web.ctx.js`):
+```
+module.exports = async function web(url, args) {
+    // not an url, skip to next middleware
+    if (url.indexOf("https://") == -1) {
+        return 
+    }
+
+    return {
+        type: "text",
+        url,
+        read: async () => {
+            const res = await fetch(url.trim());
+            return res.text()
+        }
+    }
+}
+```
+
+Usage example
+```chat
+system: @web
+
+...
+
+use this words for inspiration/randomness
+@https://random-word-api.herokuapp.com/word?number=3
+
+```
+
+### Files 
+Works with `files` middleware
 - Text files (`.md`, `.txt`, `.json`, `.js`, etc.)
 - Images (`.jpg`, `.png`, `.webp`)
 - Directories (returns file listing)
 
+```chat
+user:
+what is on the image @image
+
+user:
+are there any excel documents in 
+@my/directory
+
+user:
+summarize 
+@README.md
+
+```
+
 ### Environment Variables
 - `.env` files are automatically loaded from each search path
-- Access variables as `@VARIABLE_NAME`
+- Access variables as `@VARIABLE_NAME`, They can also be read from within tool code (e.g., ctx.read('VAR_NAME')).
 
 ## Tool Schema Generation
 
@@ -147,60 +267,19 @@ When `makeSchema: true`, the middleware will:
 1. Look for existing `.schema.json` files next to tools
 2. Save generated schemas for future use
 
-Example tool file (`converter.tool.js`):
-```javascript
-module.exports = function(params, ctx) {
-  return `Converted: ${params.input}`;
-}
-```
-
-Example schema file (`converter.schema.json`):
-```json
-{
-  "type": "function",
-  "function": {
-    "name": "converter",
-    "description": "Convert input text",
-    "parameters": {
-      "type": "object", 
-      "properties": {
-        "input": {
-          "type": "string",
-          "description": "Text to convert"
-        }
-      },
-      "required": ["input"]
-    }
-  }
-}
-```
 
 ## Advanced Usage
 
 ```javascript
-const fs = require('tune-fs')
-const { tools, files, current, writer } = require('tune-fs')
+const tunefs = require('tune-fs')
+const { tools, files, writer } = tunefs
 
 // Multiple specific middlewares
 const ctx = tune.makeContext(
-  {},
   tools({ path: './tools', makeSchema: true }),
   files({ path: './docs' }),
   files({ path: './assets', mount: 'assets' }),
-  current(),
   writer()
-)
-
-// Mixed paths with different configurations
-const ctx = tune.makeContext(
-  {},
-  fs({ 
-    paths: ['./tools', './scripts'],
-    makeSchema: async (options, ctx) => {
-      // Custom schema generator
-      return await generateCustomSchema(options.text);
-    }
-  })
 )
 ```
 
@@ -208,9 +287,8 @@ const ctx = tune.makeContext(
 
 ```chat
  user: @filename.txt              # Exact match
+ user: @filename                  # This also works
  user: @tools/converter.tool.js   # Mounted path
- user: @__filename               # Current file name
- user: @__dirname               # Current directory
- user: @CONFIG_VAR              # Environment variable
- user: @*.js                    # Regex pattern (if supported)
+ user: @tools/converter           # without extension
+ user: @CONFIG_VAR                # Environment variable
 ```
