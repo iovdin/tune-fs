@@ -15,10 +15,11 @@ function isInside(base, target) {
 }
 
 function createWriterMiddleware(opts = {}) {
-  const allowed = toArray(opts.paths).map(canon).filter(Boolean);
+  const allowed = toArray(opts.allowed).map(canon).filter(Boolean);
+  const base = path.resolve(opts.path || process.cwd())
 
-  return async function write(filename, data) {
-    const abs = path.resolve(filename);
+  return async function write(filename, data, ctx) {
+    const abs = path.resolve(base, filename);
 
     // Resolve symlinks for existing parts to guard against writes escaping allowed roots
     let dir = path.dirname(abs);

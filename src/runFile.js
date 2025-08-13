@@ -1,4 +1,5 @@
 const path = require("path");
+const url = require("url");
 const { spawnSync } = require("child_process");
 const { pparse, tpl, extend } = require('./utils');
 const msgpack = require('./msgpack');
@@ -15,7 +16,7 @@ async function runFile(filename, ctx, ...args) {
       return res.replace(/@/g, "\\@");
     } 
     else if (parsed.ext === ".mjs") {
-      const module = await import(filename + "?t=" + Date.now());
+      const module = await import(url.pathToFileURL(filename) + "?t=" + Date.now());
       if (typeof module.default !== "function") {
         throw Error("JS file does not export default function");
       }

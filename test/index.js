@@ -635,19 +635,30 @@ tests.writer = async () => {
 
   console.log("writer - restrict")
   let dirname = path.resolve(testDir, "restrict") 
-  ctx = tune.makeContext(writer({paths: dirname })) 
+  ctx = tune.makeContext(writer({allowed: dirname })) 
+
   filename = path.resolve(testDir, "name1.txt")
   await assert.rejects(
     async() => ctx.write(filename, "content"),
     { message: /write not allowed/ })
+
   filename = path.resolve(dirname, "name1.txt")
   await ctx.write(filename, "content")
   assert.ok(fs.existsSync(filename), `${filename} should exist`)
   assert.equal(fs.readFileSync(filename, "utf8").trim(), "content")
 
+  console.log("writer - cwd")
+  ctx = tune.makeContext(writer({path: dirname })) 
+  await ctx.write("name2.txt", "content2")
+
+  filename = path.resolve(dirname, "name2.txt")
+  assert.ok(fs.existsSync(filename), `${filename} should exist`)
+  assert.equal(fs.readFileSync(filename, "utf8").trim(), "content2")
+
   if (fs.existsSync(testDir)) {
     fs.rmSync(testDir, { recursive: true} )
   }
+
 
 }
 
