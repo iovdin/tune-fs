@@ -70,8 +70,8 @@ const ctx = tune.makeContext(
     writer({ path: `./${userId}`}), // allow user's chat to write to directory
 )
 const result = await ctx.text2run(`
- system: @readfile @gpt-5-mini 
- user: show me package.json
+system: @readfile @gpt-5-mini 
+user: show me package.json
 `)
 ```
 
@@ -286,9 +286,9 @@ const ctx = tune.makeContext(
 ## File Access Patterns
 
 ```chat
- user: @filename.txt              # Exact match
- user: @filename                  # This also works
- user: @tools/converter.tool.js   # Mounted path
- user: @tools/converter           # without extension
- user: @CONFIG_VAR                # Environment variable
+user: @filename.txt              # Exact match
+user: @filename                  # This also works
+user: @tools/converter.tool.js   # Mounted path
+user: @tools/converter           # without extension
+user: @CONFIG_VAR                # Environment variable
 ```
