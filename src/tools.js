@@ -104,9 +104,12 @@ function createToolsMiddleware(opts = {}, fsModule) {
             }, self);
             fsImpl.writeFileSync(schemaFile, schema);
             schema = JSON.parse(schema);
-          } else {
+          } 
+          /*
+          else {
             throw new Error("schema file not found " + schemaFile);
           }
+          */
           
           res = {
             type: "tool",

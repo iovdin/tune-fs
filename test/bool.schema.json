@@ -1,5 +1,5 @@
 {
-  "description": "A simple function that returns true",
+  "description": "Return a simple boolean value",
   "parameters": {
     "type": "object",
     "properties": {},
