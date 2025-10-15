@@ -1,8 +1,0 @@
-{
-  "description": "Return a simple boolean value",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
-}

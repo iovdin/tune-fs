@@ -17,7 +17,13 @@ function extend() {
 }
 
 function env2vars(text) {
-  return text
+  // Remove full-line comments that start with '#'
+  const filtered = text
+    .split(/\r?\n/)
+    .filter(line => !/^\s*#/.test(line))
+    .join("\n");
+
+  return filtered
     .split(/^(\w+\s*=)/gm)
     .reduce((memo, item, index, arr) => {
       const match = item.match(/^(\w+)\s*=/);
@@ -30,9 +36,13 @@ function env2vars(text) {
       return memo;
     }, [])
     .reduce((memo, item) => {
-      memo[item.name] = item.content
-        .replace(/^\s*'(.*)'\s*$/, "$1")
-        .replace(/^\s*"(.*)"\s*$/, "$1");
+      let value = item.content;
+      // Remove quotes if present
+      value = value.replace(/^\s*'(.*)'\s*$/, "$1");
+      value = value.replace(/^\s*"(.*)"\s*$/, "$1");
+      // Trim whitespace from unquoted values
+      value = value.trim();
+      memo[item.name] = value;
       return memo;
     }, {});
 }

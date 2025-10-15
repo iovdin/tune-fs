@@ -600,6 +600,60 @@ tests.toolCall8 = async function() {
   )
 }
 
+tests.env2vars = async function() {
+  const { env2vars } = require('../src/utils');
+
+  console.log("env2vars - simple key=value")
+  assert.deepEqual(env2vars("KEY=value"), { KEY: "value" })
+  assert.deepEqual(env2vars("KEY1=value1\nKEY2=value2"), { 
+    KEY1: "value1", 
+    KEY2: "value2" 
+  })
+
+  console.log("env2vars - quoted values")
+  assert.deepEqual(env2vars("KEY='value'"), { KEY: "value" })
+  assert.deepEqual(env2vars('KEY="value"'), { KEY: "value" })
+  assert.deepEqual(env2vars("KEY='multi word value'"), { KEY: "multi word value" })
+
+  console.log("env2vars - whitespace handling")
+  assert.deepEqual(env2vars("KEY = value"), { KEY: "value" })
+  assert.deepEqual(env2vars("KEY=  value  "), { KEY: "value" })
+  assert.deepEqual(env2vars("KEY =  'value'  "), { KEY: "value" })
+
+  console.log("env2vars - comment support")
+  assert.deepEqual(env2vars("# This is a comment\nKEY=value"), { KEY: "value" })
+  assert.deepEqual(env2vars("#comment\nKEY1=value1\n#another comment\nKEY2=value2"), {
+    KEY1: "value1",
+    KEY2: "value2"
+  })
+  assert.deepEqual(env2vars("  # indented comment\nKEY=value"), { KEY: "value" })
+  assert.deepEqual(env2vars("KEY=value\n# comment in middle\nKEY2=value2"), {
+    KEY: "value",
+    KEY2: "value2"
+  })
+
+  console.log("env2vars - empty lines")
+  assert.deepEqual(env2vars("KEY1=value1\n\nKEY2=value2"), {
+    KEY1: "value1",
+    KEY2: "value2"
+  })
+  assert.deepEqual(env2vars("\n\nKEY=value\n\n"), { KEY: "value" })
+
+  console.log("env2vars - mixed content")
+  assert.deepEqual(env2vars("# Config file\nKEY1=value1\n# Another setting\nKEY2='quoted value'\n\nKEY3=value3"), {
+    KEY1: "value1",
+    KEY2: "quoted value",
+    KEY3: "value3"
+  })
+
+  console.log("env2vars - windows line endings")
+  assert.deepEqual(env2vars("KEY1=value1\r\nKEY2=value2"), {
+    KEY1: "value1",
+    KEY2: "value2"
+  })
+  assert.deepEqual(env2vars("# comment\r\nKEY=value"), { KEY: "value" })
+}
+
 tests.pparse1 = async function() {
   assert.deepEqual(tunefs.pparse("/home/dir/file.js"), {
     root: "/",
