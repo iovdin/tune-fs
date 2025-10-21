@@ -1,6 +1,6 @@
 {
   "name": "tune-fs",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Filesystem middlewares for tune",
   "main": "src/index.js",
   "files": [
