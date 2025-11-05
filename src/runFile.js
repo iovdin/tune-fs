@@ -13,7 +13,7 @@ async function runFile(filename, ctx, ...args) {
         filename: filename,
         stop: "assistant"
       }, args[0]);
-      return res.replace(/@/g, "\\@");
+      return res
     } 
     else if (parsed.ext === ".mjs") {
       const module = await import(url.pathToFileURL(filename) + "?t=" + Date.now());
